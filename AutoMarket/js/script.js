@@ -25,29 +25,18 @@ let vehiculosCache = [];
 ===================================================== */
 
 async function obtenerVehiculos() {
-
     try {
-
         const respuesta = await fetch(`${API_BASE}/vehiculos`);
-
         if (!respuesta.ok) {
             throw new Error(`Error del servidor: ${respuesta.status}`);
         }
-
         const vehiculos = await respuesta.json();
-
         vehiculosCache = vehiculos;
-
         return vehiculos;
-
     } catch (error) {
-
         console.error("No se pudo obtener el catálogo:", error);
-
         return [];
-
     }
-
 }
 
 
@@ -56,25 +45,16 @@ async function obtenerVehiculos() {
 ===================================================== */
 
 async function obtenerVehiculoPorId(id) {
-
     try {
-
         const respuesta = await fetch(`${API_BASE}/vehiculos/${id}`);
-
         if (!respuesta.ok) {
             return null;
         }
-
         return await respuesta.json();
-
     } catch (error) {
-
         console.error("No se pudo obtener el vehículo:", error);
-
         return null;
-
     }
-
 }
 
 
@@ -83,7 +63,6 @@ async function obtenerVehiculoPorId(id) {
 ===================================================== */
 
 async function crearVehiculo(datosVehiculo) {
-
     const respuesta = await fetch(`${API_BASE}/vehiculos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -96,7 +75,6 @@ async function crearVehiculo(datosVehiculo) {
     }
 
     return respuesta.json();
-
 }
 
 
@@ -105,7 +83,6 @@ async function crearVehiculo(datosVehiculo) {
 ===================================================== */
 
 async function crearConsulta(datosConsulta) {
-
     const respuesta = await fetch(`${API_BASE}/consultas`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -118,7 +95,6 @@ async function crearConsulta(datosConsulta) {
     }
 
     return respuesta.json();
-
 }
 
 
@@ -127,107 +103,45 @@ async function crearConsulta(datosConsulta) {
 ===================================================== */
 
 function mostrarCatalogo(vehiculos) {
-
-    const catalogo =
-        document.getElementById("catalogo");
-
-    const sinResultados =
-        document.getElementById("sinResultados");
-
+    const catalogo = document.getElementById("catalogo");
+    const sinResultados = document.getElementById("sinResultados");
 
     if (!catalogo) {
-
         return;
-
     }
-
 
     catalogo.innerHTML = "";
 
-
     if (!vehiculos || vehiculos.length === 0) {
-
         if (sinResultados) {
             sinResultados.style.display = "block";
         }
-
         return;
-
     }
-
 
     if (sinResultados) {
         sinResultados.style.display = "none";
     }
 
-
     vehiculos.forEach(vehiculo => {
-
-        const tarjeta =
-            document.createElement("article");
-
-        tarjeta.className =
-            "vehicle-card";
-
+        const tarjeta = document.createElement("article");
+        tarjeta.className = "vehicle-card";
 
         tarjeta.innerHTML = `
-
             <div class="vehicle-image">
-
                 ${vehiculo.icono || "🚗"}
-
             </div>
-
-
             <div class="vehicle-info">
-
-                <span class="vehicle-year">
-
-                    ${vehiculo.anio}
-
-                </span>
-
-
-                <h3>
-
-                    ${vehiculo.marca}
-                    ${vehiculo.modelo}
-
-                </h3>
-
-
-                <p>
-
-                    ${vehiculo.caracteristicas}
-
-                </p>
-
-
-                <strong>
-
-                    $${Number(vehiculo.precio)
-                        .toLocaleString()}
-
-                </strong>
-
-
-                
-                    href="detalle.html?id=${vehiculo._id}"
-                    class="btn btn-small">
-
-                    Ver detalles
-
-                </a>
-
+                <span class="vehicle-year">${vehiculo.anio}</span>
+                <h3>${vehiculo.marca} ${vehiculo.modelo}</h3>
+                <p>${vehiculo.caracteristicas}</p>
+                <strong>$${Number(vehiculo.precio).toLocaleString()}</strong>
+                <a href="detalle.html?id=${vehiculo._id}" class="btn btn-small">Ver detalles</a>
             </div>
-
         `;
 
-
         catalogo.appendChild(tarjeta);
-
     });
-
 }
 
 
@@ -236,18 +150,12 @@ function mostrarCatalogo(vehiculos) {
 ===================================================== */
 
 async function cargarCatalogo() {
-
-    const catalogo =
-        document.getElementById("catalogo");
-
+    const catalogo = document.getElementById("catalogo");
     if (!catalogo) {
         return;
     }
-
     const vehiculos = await obtenerVehiculos();
-
     mostrarCatalogo(vehiculos);
-
 }
 
 
@@ -256,64 +164,25 @@ async function cargarCatalogo() {
 ===================================================== */
 
 function filtrarVehiculos() {
-
-    const texto =
-        document
-            .getElementById("searchVehicle")
-            ?.value
-            .toLowerCase()
-            .trim();
-
-
-    const marca =
-        document
-            .getElementById("filterBrand")
-            ?.value;
-
-
-    const anio =
-        document
-            .getElementById("filterYear")
-            ?.value;
-
+    const texto = document.getElementById("searchVehicle")?.value.toLowerCase().trim();
+    const marca = document.getElementById("filterBrand")?.value;
+    const anio = document.getElementById("filterYear")?.value;
 
     let vehiculos = vehiculosCache;
 
+    vehiculos = vehiculos.filter(vehiculo => {
+        const coincideTexto =
+            !texto ||
+            vehiculo.marca.toLowerCase().includes(texto) ||
+            vehiculo.modelo.toLowerCase().includes(texto);
 
-    vehiculos =
-        vehiculos.filter(vehiculo => {
+        const coincideMarca = !marca || vehiculo.marca === marca;
+        const coincideAnio = !anio || vehiculo.anio >= Number(anio);
 
-            const coincideTexto =
-                !texto ||
-                vehiculo.marca
-                    .toLowerCase()
-                    .includes(texto) ||
-                vehiculo.modelo
-                    .toLowerCase()
-                    .includes(texto);
-
-
-            const coincideMarca =
-                !marca ||
-                vehiculo.marca === marca;
-
-
-            const coincideAnio =
-                !anio ||
-                vehiculo.anio >= Number(anio);
-
-
-            return (
-                coincideTexto &&
-                coincideMarca &&
-                coincideAnio
-            );
-
-        });
-
+        return coincideTexto && coincideMarca && coincideAnio;
+    });
 
     mostrarCatalogo(vehiculos);
-
 }
 
 
@@ -322,165 +191,47 @@ function filtrarVehiculos() {
 ===================================================== */
 
 async function mostrarDetalle() {
-
-    const contenedor =
-        document.getElementById(
-            "detalleVehiculo"
-        );
-
-
+    const contenedor = document.getElementById("detalleVehiculo");
     if (!contenedor) {
-
         return;
-
     }
 
-
-    const parametros =
-        new URLSearchParams(
-            window.location.search
-        );
-
-
-    const id =
-        parametros.get("id");
-
-
-    const vehiculo =
-        id ? await obtenerVehiculoPorId(id) : null;
-
+    const parametros = new URLSearchParams(window.location.search);
+    const id = parametros.get("id");
+    const vehiculo = id ? await obtenerVehiculoPorId(id) : null;
 
     if (!vehiculo) {
-
         contenedor.innerHTML = `
-
             <div class="no-results">
-
-                <h3>
-                    Vehículo no encontrado
-                </h3>
-
-                <p>
-                    El vehículo solicitado
-                    no existe.
-                </p>
-
+                <h3>Vehículo no encontrado</h3>
+                <p>El vehículo solicitado no existe.</p>
                 <br>
-
-                
-                    href="catalogo.html"
-                    class="btn btn-primary">
-
-                    Volver al catálogo
-
-                </a>
-
+                <a href="catalogo.html" class="btn btn-primary">Volver al catálogo</a>
             </div>
-
         `;
-
         return;
-
     }
 
-
     contenedor.innerHTML = `
-
         <div class="detail-card">
-
             <div class="detail-image">
-
                 ${vehiculo.icono || "🚗"}
-
             </div>
-
-
             <div class="detail-info">
-
-                <span class="vehicle-year">
-
-                    ${vehiculo.anio}
-
-                </span>
-
-
-                <h2>
-
-                    ${vehiculo.marca}
-                    ${vehiculo.modelo}
-
-                </h2>
-
-
-                <p>
-
-                    ${vehiculo.descripcion}
-
-                </p>
-
-
-                <div class="detail-price">
-
-                    $${Number(vehiculo.precio)
-                        .toLocaleString()}
-
-                </div>
-
-
+                <span class="vehicle-year">${vehiculo.anio}</span>
+                <h2>${vehiculo.marca} ${vehiculo.modelo}</h2>
+                <p>${vehiculo.descripcion}</p>
+                <div class="detail-price">$${Number(vehiculo.precio).toLocaleString()}</div>
                 <ul class="detail-list">
-
-                    <li>
-                        <strong>
-                            Marca:
-                        </strong>
-
-                        ${vehiculo.marca}
-                    </li>
-
-
-                    <li>
-                        <strong>
-                            Modelo:
-                        </strong>
-
-                        ${vehiculo.modelo}
-                    </li>
-
-
-                    <li>
-                        <strong>
-                            Año:
-                        </strong>
-
-                        ${vehiculo.anio}
-                    </li>
-
-
-                    <li>
-                        <strong>
-                            Características:
-                        </strong>
-
-                        ${vehiculo.caracteristicas}
-                    </li>
-
+                    <li><strong>Marca:</strong> ${vehiculo.marca}</li>
+                    <li><strong>Modelo:</strong> ${vehiculo.modelo}</li>
+                    <li><strong>Año:</strong> ${vehiculo.anio}</li>
+                    <li><strong>Características:</strong> ${vehiculo.caracteristicas}</li>
                 </ul>
-
-
-                
-                    href="contacto.html?vehiculo=${vehiculo._id}"
-                    class="btn btn-primary">
-
-                    Consultar vehículo
-
-                </a>
-
+                <a href="contacto.html?vehiculo=${vehiculo._id}" class="btn btn-primary">Consultar vehículo</a>
             </div>
-
         </div>
-
     `;
-
 }
 
 
@@ -489,139 +240,48 @@ async function mostrarDetalle() {
 ===================================================== */
 
 function configurarFormularioPublicar() {
-
-    const formulario =
-        document.getElementById(
-            "formPublicar"
-        );
-
-
+    const formulario = document.getElementById("formPublicar");
     if (!formulario) {
-
         return;
-
     }
 
+    formulario.addEventListener("submit", async function (event) {
+        event.preventDefault();
 
-    formulario.addEventListener(
-        "submit",
-        async function(event) {
+        const marca = document.getElementById("marca").value.trim();
+        const modelo = document.getElementById("modelo").value.trim();
+        const anio = Number(document.getElementById("anio").value);
+        const precio = Number(document.getElementById("precio").value);
+        const caracteristicas = document.getElementById("caracteristicas").value.trim();
+        const descripcion = document.getElementById("descripcion").value.trim();
 
-            event.preventDefault();
-
-
-            const marca =
-                document
-                    .getElementById("marca")
-                    .value
-                    .trim();
-
-
-            const modelo =
-                document
-                    .getElementById("modelo")
-                    .value
-                    .trim();
-
-
-            const anio =
-                Number(
-                    document
-                        .getElementById("anio")
-                        .value
-                );
-
-
-            const precio =
-                Number(
-                    document
-                        .getElementById("precio")
-                        .value
-                );
-
-
-            const caracteristicas =
-                document
-                    .getElementById(
-                        "caracteristicas"
-                    )
-                    .value
-                    .trim();
-
-
-            const descripcion =
-                document
-                    .getElementById(
-                        "descripcion"
-                    )
-                    .value
-                    .trim();
-
-
-            if (
-                !marca ||
-                !modelo ||
-                !anio ||
-                !precio ||
-                !caracteristicas ||
-                !descripcion
-            ) {
-
-                mostrarMensaje(
-                    "mensajePublicacion",
-                    "Completa todos los campos obligatorios.",
-                    "error"
-                );
-
-                return;
-
-            }
-
-
-            const nuevoVehiculo = {
-
-                marca,
-
-                modelo,
-
-                anio,
-
-                precio,
-
-                caracteristicas,
-
-                descripcion,
-
-                icono: "🚗"
-
-            };
-
-
-            try {
-
-                await crearVehiculo(nuevoVehiculo);
-
-                mostrarMensaje(
-                    "mensajePublicacion",
-                    "¡Vehículo publicado correctamente!",
-                    "success"
-                );
-
-                formulario.reset();
-
-            } catch (error) {
-
-                mostrarMensaje(
-                    "mensajePublicacion",
-                    error.message || "No se pudo publicar el vehículo. Intenta de nuevo.",
-                    "error"
-                );
-
-            }
-
+        if (!marca || !modelo || !anio || !precio || !caracteristicas || !descripcion) {
+            mostrarMensaje("mensajePublicacion", "Completa todos los campos obligatorios.", "error");
+            return;
         }
-    );
 
+        const nuevoVehiculo = {
+            marca,
+            modelo,
+            anio,
+            precio,
+            caracteristicas,
+            descripcion,
+            icono: "🚗"
+        };
+
+        try {
+            await crearVehiculo(nuevoVehiculo);
+            mostrarMensaje("mensajePublicacion", "¡Vehículo publicado correctamente!", "success");
+            formulario.reset();
+        } catch (error) {
+            mostrarMensaje(
+                "mensajePublicacion",
+                error.message || "No se pudo publicar el vehículo. Intenta de nuevo.",
+                "error"
+            );
+        }
+    });
 }
 
 
@@ -630,121 +290,53 @@ function configurarFormularioPublicar() {
 ===================================================== */
 
 function configurarFormularioContacto() {
-
-    const formulario =
-        document.getElementById(
-            "formContacto"
-        );
-
-
+    const formulario = document.getElementById("formContacto");
     if (!formulario) {
-
         return;
-
     }
-
 
     // Si venimos desde "Consultar vehículo" en detalle.html,
     // el id del vehículo llega como parámetro en la URL.
-    const parametros =
-        new URLSearchParams(window.location.search);
+    const parametros = new URLSearchParams(window.location.search);
+    const idVehiculo = parametros.get("vehiculo");
 
-    const idVehiculo =
-        parametros.get("vehiculo");
+    formulario.addEventListener("submit", async function (event) {
+        event.preventDefault();
 
+        const nombre = document.getElementById("nombre").value.trim();
+        const correo = document.getElementById("correo").value.trim();
+        const telefono = document.getElementById("telefono").value.trim();
+        const mensaje = document.getElementById("mensaje").value.trim();
 
-    formulario.addEventListener(
-        "submit",
-        async function(event) {
-
-            event.preventDefault();
-
-
-            const nombre =
-                document
-                    .getElementById("nombre")
-                    .value
-                    .trim();
-
-
-            const correo =
-                document
-                    .getElementById("correo")
-                    .value
-                    .trim();
-
-
-            const telefono =
-                document
-                    .getElementById("telefono")
-                    .value
-                    .trim();
-
-
-            const mensaje =
-                document
-                    .getElementById("mensaje")
-                    .value
-                    .trim();
-
-
-            if (
-                !nombre ||
-                !correo ||
-                !mensaje
-            ) {
-
-                mostrarMensaje(
-                    "mensajeContacto",
-                    "Completa los campos obligatorios.",
-                    "error"
-                );
-
-                return;
-
-            }
-
-
-            const nuevaConsulta = {
-
-                nombre,
-
-                correo,
-
-                telefono,
-
-                mensaje,
-
-                id_vehiculo: idVehiculo || undefined
-
-            };
-
-
-            try {
-
-                await crearConsulta(nuevaConsulta);
-
-                mostrarMensaje(
-                    "mensajeContacto",
-                    "¡Consulta enviada correctamente! Nos comunicaremos contigo.",
-                    "success"
-                );
-
-                formulario.reset();
-
-            } catch (error) {
-
-                mostrarMensaje(
-                    "mensajeContacto",
-                    error.message || "No se pudo enviar la consulta. Intenta de nuevo.",
-                    "error"
-                );
-
-            }
-
+        if (!nombre || !correo || !mensaje) {
+            mostrarMensaje("mensajeContacto", "Completa los campos obligatorios.", "error");
+            return;
         }
-    );
 
+        const nuevaConsulta = {
+            nombre,
+            correo,
+            telefono,
+            mensaje,
+            id_vehiculo: idVehiculo || undefined
+        };
+
+        try {
+            await crearConsulta(nuevaConsulta);
+            mostrarMensaje(
+                "mensajeContacto",
+                "¡Consulta enviada correctamente! Nos comunicaremos contigo.",
+                "success"
+            );
+            formulario.reset();
+        } catch (error) {
+            mostrarMensaje(
+                "mensajeContacto",
+                error.message || "No se pudo enviar la consulta. Intenta de nuevo.",
+                "error"
+            );
+        }
+    });
 }
 
 
@@ -752,40 +344,18 @@ function configurarFormularioContacto() {
    MOSTRAR MENSAJES
 ===================================================== */
 
-function mostrarMensaje(
-    elementoId,
-    texto,
-    tipo
-) {
-
-    const elemento =
-        document.getElementById(
-            elementoId
-        );
-
-
+function mostrarMensaje(elementoId, texto, tipo) {
+    const elemento = document.getElementById(elementoId);
     if (!elemento) {
-
         return;
-
     }
 
-
-    elemento.textContent =
-        texto;
-
-
-    elemento.className =
-        `form-message ${tipo}`;
-
+    elemento.textContent = texto;
+    elemento.className = `form-message ${tipo}`;
 
     setTimeout(() => {
-
-        elemento.className =
-            "form-message";
-
+        elemento.className = "form-message";
     }, 5000);
-
 }
 
 
@@ -793,17 +363,9 @@ function mostrarMensaje(
    INICIALIZACIÓN
 ===================================================== */
 
-document.addEventListener(
-    "DOMContentLoaded",
-    function() {
-
-        cargarCatalogo();
-
-        mostrarDetalle();
-
-        configurarFormularioPublicar();
-
-        configurarFormularioContacto();
-
-    }
-);
+document.addEventListener("DOMContentLoaded", function () {
+    cargarCatalogo();
+    mostrarDetalle();
+    configurarFormularioPublicar();
+    configurarFormularioContacto();
+});
