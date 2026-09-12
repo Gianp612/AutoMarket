@@ -79,6 +79,24 @@ async function crearVehiculo(datosVehiculo) {
 
 
 /* =====================================================
+   ELIMINAR UN VEHÍCULO EN LA API
+===================================================== */
+
+async function eliminarVehiculo(id) {
+    const respuesta = await fetch(`${API_BASE}/vehiculos/${id}`, {
+        method: "DELETE"
+    });
+
+    if (!respuesta.ok) {
+        const detalle = await respuesta.json().catch(() => ({}));
+        throw new Error(detalle.error || "No se pudo eliminar el vehículo.");
+    }
+
+    return respuesta.json();
+}
+
+
+/* =====================================================
    ENVIAR UNA CONSULTA DE CONTACTO A LA API
 ===================================================== */
 
@@ -140,9 +158,25 @@ function mostrarCatalogo(vehiculos) {
                 <h3>${vehiculo.marca} ${vehiculo.modelo}</h3>
                 <p>${vehiculo.caracteristicas}</p>
                 <strong>$${Number(vehiculo.precio).toLocaleString()}</strong>
-                <a href="detalle.html?id=${vehiculo._id}" class="btn btn-small">Ver detalles</a>
+                <div class="vehicle-actions">
+                    <a href="detalle.html?id=${vehiculo._id}" class="btn btn-small">Ver detalles</a>
+                    <button type="button" class="btn btn-small btn-eliminar" data-id="${vehiculo._id}">Eliminar</button>
+                </div>
             </div>
         `;
+
+        const botonEliminar = tarjeta.querySelector(".btn-eliminar");
+        botonEliminar.addEventListener("click", async () => {
+            const confirmado = confirm(`¿Seguro que quieres eliminar ${vehiculo.marca} ${vehiculo.modelo}?`);
+            if (!confirmado) return;
+
+            try {
+                await eliminarVehiculo(vehiculo._id);
+                tarjeta.remove();
+            } catch (error) {
+                alert(error.message || "No se pudo eliminar el vehículo.");
+            }
+        });
 
         catalogo.appendChild(tarjeta);
     });
@@ -236,10 +270,26 @@ async function mostrarDetalle() {
                     <li><strong>Año:</strong> ${vehiculo.anio}</li>
                     <li><strong>Características:</strong> ${vehiculo.caracteristicas}</li>
                 </ul>
-                <a href="contacto.html?vehiculo=${vehiculo._id}" class="btn btn-primary">Consultar vehículo</a>
+                <div class="detail-actions">
+                    <a href="contacto.html?vehiculo=${vehiculo._id}" class="btn btn-primary">Consultar vehículo</a>
+                    <button type="button" id="btnEliminarDetalle" class="btn btn-primary btn-eliminar">Eliminar publicación</button>
+                </div>
             </div>
         </div>
     `;
+
+    const botonEliminarDetalle = document.getElementById("btnEliminarDetalle");
+    botonEliminarDetalle.addEventListener("click", async () => {
+        const confirmado = confirm(`¿Seguro que quieres eliminar ${vehiculo.marca} ${vehiculo.modelo}? Esta acción no se puede deshacer.`);
+        if (!confirmado) return;
+
+        try {
+            await eliminarVehiculo(vehiculo._id);
+            window.location.href = "catalogo.html";
+        } catch (error) {
+            alert(error.message || "No se pudo eliminar el vehículo.");
+        }
+    });
 }
 
 
