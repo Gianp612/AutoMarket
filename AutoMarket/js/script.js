@@ -127,9 +127,13 @@ function mostrarCatalogo(vehiculos) {
         const tarjeta = document.createElement("article");
         tarjeta.className = "vehicle-card";
 
+        const imagenHTML = vehiculo.imagen
+            ? `<img src="${vehiculo.imagen}" alt="${vehiculo.marca} ${vehiculo.modelo}" onerror="this.onerror=null; this.replaceWith(Object.assign(document.createElement('div'), { className: 'vehicle-image-fallback', textContent: '🚗' }));">`
+            : `<div class="vehicle-image-fallback">${vehiculo.icono || "🚗"}</div>`;
+
         tarjeta.innerHTML = `
             <div class="vehicle-image">
-                ${vehiculo.icono || "🚗"}
+                ${imagenHTML}
             </div>
             <div class="vehicle-info">
                 <span class="vehicle-year">${vehiculo.anio}</span>
@@ -212,10 +216,14 @@ async function mostrarDetalle() {
         return;
     }
 
+    const imagenDetalleHTML = vehiculo.imagen
+        ? `<img src="${vehiculo.imagen}" alt="${vehiculo.marca} ${vehiculo.modelo}" onerror="this.onerror=null; this.replaceWith(Object.assign(document.createElement('div'), { className: 'detail-image-fallback', textContent: '🚗' }));">`
+        : `<div class="detail-image-fallback">${vehiculo.icono || "🚗"}</div>`;
+
     contenedor.innerHTML = `
         <div class="detail-card">
             <div class="detail-image">
-                ${vehiculo.icono || "🚗"}
+                ${imagenDetalleHTML}
             </div>
             <div class="detail-info">
                 <span class="vehicle-year">${vehiculo.anio}</span>
@@ -253,6 +261,7 @@ function configurarFormularioPublicar() {
         const anio = Number(document.getElementById("anio").value);
         const precio = Number(document.getElementById("precio").value);
         const caracteristicas = document.getElementById("caracteristicas").value.trim();
+        const imagen = document.getElementById("imagen").value.trim();
         const descripcion = document.getElementById("descripcion").value.trim();
 
         if (!marca || !modelo || !anio || !precio || !caracteristicas || !descripcion) {
@@ -267,6 +276,7 @@ function configurarFormularioPublicar() {
             precio,
             caracteristicas,
             descripcion,
+            imagen: imagen || undefined,
             icono: "🚗"
         };
 
