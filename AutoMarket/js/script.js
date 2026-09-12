@@ -1,125 +1,123 @@
 /* =====================================================
    AUTOMARKET
    JAVASCRIPT PRINCIPAL
+   Ahora consulta la API real (Express + MongoDB)
+   en vez de usar localStorage.
 ===================================================== */
 
 
 /* =====================================================
-   DATOS INICIALES DE VEHÍCULOS
+   CONFIGURACIÓN DE LA API
 ===================================================== */
 
-const vehiculosIniciales = [
+// Mientras desarrollas en tu máquina, deja esta URL.
+// Cuando despliegues el backend en Render, cámbiala por
+// la URL pública, ej: "https://automarket-api.onrender.com/api"
+const API_BASE = "http://localhost:4000/api";
 
-    {
-        id: 1,
-        marca: "Toyota",
-        modelo: "Corolla",
-        anio: 2024,
-        precio: 22500,
-        caracteristicas: "Automático, gasolina, 5 puertas",
-        descripcion:
-            "Toyota Corolla en excelente estado, ideal para uso urbano y familiar.",
-        icono: "🚘"
-    },
-
-    {
-        id: 2,
-        marca: "Honda",
-        modelo: "CR-V",
-        anio: 2023,
-        precio: 29900,
-        caracteristicas: "Automático, gasolina, SUV",
-        descripcion:
-            "Honda CR-V con amplio espacio interior y excelente comodidad.",
-        icono: "🚙"
-    },
-
-    {
-        id: 3,
-        marca: "BMW",
-        modelo: "Serie 3",
-        anio: 2024,
-        precio: 45000,
-        caracteristicas: "Automático, gasolina, premium",
-        descripcion:
-            "BMW Serie 3 con diseño moderno, tecnología y alto rendimiento.",
-        icono: "🏎️"
-    },
-
-    {
-        id: 4,
-        marca: "Ford",
-        modelo: "Ranger",
-        anio: 2023,
-        precio: 35000,
-        caracteristicas: "Manual, diésel, pickup",
-        descripcion:
-            "Ford Ranger preparada para trabajo y aventura.",
-        icono: "🛻"
-    },
-
-    {
-        id: 5,
-        marca: "Toyota",
-        modelo: "RAV4",
-        anio: 2025,
-        precio: 38000,
-        caracteristicas: "Automático, híbrido, SUV",
-        descripcion:
-            "Toyota RAV4 moderna con tecnología híbrida y gran espacio.",
-        icono: "🚙"
-    },
-
-    {
-        id: 6,
-        marca: "Honda",
-        modelo: "Civic",
-        anio: 2024,
-        precio: 26000,
-        caracteristicas: "Automático, gasolina, sedán",
-        descripcion:
-            "Honda Civic moderno, cómodo y eficiente para uso diario.",
-        icono: "🚗"
-    }
-
-];
+// Guardamos en memoria la última lista de vehículos que
+// trajo el servidor, para poder filtrarla sin volver a pedirla.
+let vehiculosCache = [];
 
 
 /* =====================================================
-   OBTENER VEHÍCULOS
+   OBTENER VEHÍCULOS DESDE LA API
 ===================================================== */
 
-function obtenerVehiculos() {
+async function obtenerVehiculos() {
 
-    const guardados =
-        localStorage.getItem("automarket_vehiculos");
+    try {
 
-    if (guardados) {
+        const respuesta = await fetch(`${API_BASE}/vehiculos`);
 
-        return JSON.parse(guardados);
+        if (!respuesta.ok) {
+            throw new Error(`Error del servidor: ${respuesta.status}`);
+        }
+
+        const vehiculos = await respuesta.json();
+
+        vehiculosCache = vehiculos;
+
+        return vehiculos;
+
+    } catch (error) {
+
+        console.error("No se pudo obtener el catálogo:", error);
+
+        return [];
 
     }
-
-    localStorage.setItem(
-        "automarket_vehiculos",
-        JSON.stringify(vehiculosIniciales)
-    );
-
-    return vehiculosIniciales;
 
 }
 
 
 /* =====================================================
-   GUARDAR VEHÍCULOS
+   OBTENER UN VEHÍCULO POR ID DESDE LA API
 ===================================================== */
 
-function guardarVehiculos(vehiculos) {
+async function obtenerVehiculoPorId(id) {
 
-    localStorage.setItem(
-        "automarket_vehiculos",
-        JSON.stringify(vehiculos)
-    );
+    try {
+
+        const respuesta = await fetch(`${API_BASE}/vehiculos/${id}`);
+
+        if (!respuesta.ok) {
+            return null;
+        }
+
+        return await respuesta.json();
+
+    } catch (error) {
+
+        console.error("No se pudo obtener el vehículo:", error);
+
+        return null;
+
+    }
+
+}
+
+
+/* =====================================================
+   PUBLICAR UN VEHÍCULO NUEVO EN LA API
+===================================================== */
+
+async function crearVehiculo(datosVehiculo) {
+
+    const respuesta = await fetch(`${API_BASE}/vehiculos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datosVehiculo)
+    });
+
+    if (!respuesta.ok) {
+        const detalle = await respuesta.json().catch(() => ({}));
+        throw new Error(detalle.error || "No se pudo publicar el vehículo.");
+    }
+
+    return respuesta.json();
+
+}
+
+
+/* =====================================================
+   ENVIAR UNA CONSULTA DE CONTACTO A LA API
+===================================================== */
+
+async function crearConsulta(datosConsulta) {
+
+    const respuesta = await fetch(`${API_BASE}/consultas`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datosConsulta)
+    });
+
+    if (!respuesta.ok) {
+        const detalle = await respuesta.json().catch(() => ({}));
+        throw new Error(detalle.error || "No se pudo enviar la consulta.");
+    }
+
+    return respuesta.json();
 
 }
 
@@ -128,7 +126,7 @@ function guardarVehiculos(vehiculos) {
    MOSTRAR CATÁLOGO
 ===================================================== */
 
-function mostrarCatalogo(vehiculos = obtenerVehiculos()) {
+function mostrarCatalogo(vehiculos) {
 
     const catalogo =
         document.getElementById("catalogo");
@@ -147,18 +145,20 @@ function mostrarCatalogo(vehiculos = obtenerVehiculos()) {
     catalogo.innerHTML = "";
 
 
-    if (vehiculos.length === 0) {
+    if (!vehiculos || vehiculos.length === 0) {
 
-        sinResultados.style.display =
-            "block";
+        if (sinResultados) {
+            sinResultados.style.display = "block";
+        }
 
         return;
 
     }
 
 
-    sinResultados.style.display =
-        "none";
+    if (sinResultados) {
+        sinResultados.style.display = "none";
+    }
 
 
     vehiculos.forEach(vehiculo => {
@@ -211,8 +211,8 @@ function mostrarCatalogo(vehiculos = obtenerVehiculos()) {
                 </strong>
 
 
-                <a
-                    href="detalle.html?id=${vehiculo.id}"
+                
+                    href="detalle.html?id=${vehiculo._id}"
                     class="btn btn-small">
 
                     Ver detalles
@@ -232,7 +232,27 @@ function mostrarCatalogo(vehiculos = obtenerVehiculos()) {
 
 
 /* =====================================================
-   FILTRAR VEHÍCULOS
+   CARGAR Y MOSTRAR EL CATÁLOGO (primera carga de la página)
+===================================================== */
+
+async function cargarCatalogo() {
+
+    const catalogo =
+        document.getElementById("catalogo");
+
+    if (!catalogo) {
+        return;
+    }
+
+    const vehiculos = await obtenerVehiculos();
+
+    mostrarCatalogo(vehiculos);
+
+}
+
+
+/* =====================================================
+   FILTRAR VEHÍCULOS (sobre los datos ya cargados)
 ===================================================== */
 
 function filtrarVehiculos() {
@@ -257,8 +277,7 @@ function filtrarVehiculos() {
             ?.value;
 
 
-    let vehiculos =
-        obtenerVehiculos();
+    let vehiculos = vehiculosCache;
 
 
     vehiculos =
@@ -302,7 +321,7 @@ function filtrarVehiculos() {
    DETALLE DEL VEHÍCULO
 ===================================================== */
 
-function mostrarDetalle() {
+async function mostrarDetalle() {
 
     const contenedor =
         document.getElementById(
@@ -324,12 +343,11 @@ function mostrarDetalle() {
 
 
     const id =
-        Number(parametros.get("id"));
+        parametros.get("id");
 
 
     const vehiculo =
-        obtenerVehiculos()
-            .find(item => item.id === id);
+        id ? await obtenerVehiculoPorId(id) : null;
 
 
     if (!vehiculo) {
@@ -349,7 +367,7 @@ function mostrarDetalle() {
 
                 <br>
 
-                <a
+                
                     href="catalogo.html"
                     class="btn btn-primary">
 
@@ -449,8 +467,8 @@ function mostrarDetalle() {
                 </ul>
 
 
-                <a
-                    href="contacto.html"
+                
+                    href="contacto.html?vehiculo=${vehiculo._id}"
                     class="btn btn-primary">
 
                     Consultar vehículo
@@ -487,7 +505,7 @@ function configurarFormularioPublicar() {
 
     formulario.addEventListener(
         "submit",
-        function(event) {
+        async function(event) {
 
             event.preventDefault();
 
@@ -560,14 +578,7 @@ function configurarFormularioPublicar() {
             }
 
 
-            const vehiculos =
-                obtenerVehiculos();
-
-
             const nuevoVehiculo = {
-
-                id:
-                    Date.now(),
 
                 marca,
 
@@ -586,24 +597,27 @@ function configurarFormularioPublicar() {
             };
 
 
-            vehiculos.push(
-                nuevoVehiculo
-            );
+            try {
 
+                await crearVehiculo(nuevoVehiculo);
 
-            guardarVehiculos(
-                vehiculos
-            );
+                mostrarMensaje(
+                    "mensajePublicacion",
+                    "¡Vehículo publicado correctamente!",
+                    "success"
+                );
 
+                formulario.reset();
 
-            mostrarMensaje(
-                "mensajePublicacion",
-                "¡Vehículo publicado correctamente!",
-                "success"
-            );
+            } catch (error) {
 
+                mostrarMensaje(
+                    "mensajePublicacion",
+                    error.message || "No se pudo publicar el vehículo. Intenta de nuevo.",
+                    "error"
+                );
 
-            formulario.reset();
+            }
 
         }
     );
@@ -630,9 +644,18 @@ function configurarFormularioContacto() {
     }
 
 
+    // Si venimos desde "Consultar vehículo" en detalle.html,
+    // el id del vehículo llega como parámetro en la URL.
+    const parametros =
+        new URLSearchParams(window.location.search);
+
+    const idVehiculo =
+        parametros.get("vehiculo");
+
+
     formulario.addEventListener(
         "submit",
-        function(event) {
+        async function(event) {
 
             event.preventDefault();
 
@@ -682,18 +705,7 @@ function configurarFormularioContacto() {
             }
 
 
-            const consultas =
-                JSON.parse(
-                    localStorage.getItem(
-                        "automarket_consultas"
-                    )
-                ) || [];
-
-
             const nuevaConsulta = {
-
-                id:
-                    Date.now(),
 
                 nombre,
 
@@ -703,34 +715,32 @@ function configurarFormularioContacto() {
 
                 mensaje,
 
-                fecha:
-                    new Date()
-                        .toLocaleString()
+                id_vehiculo: idVehiculo || undefined
 
             };
 
 
-            consultas.push(
-                nuevaConsulta
-            );
+            try {
 
+                await crearConsulta(nuevaConsulta);
 
-            localStorage.setItem(
-                "automarket_consultas",
-                JSON.stringify(
-                    consultas
-                )
-            );
+                mostrarMensaje(
+                    "mensajeContacto",
+                    "¡Consulta enviada correctamente! Nos comunicaremos contigo.",
+                    "success"
+                );
 
+                formulario.reset();
 
-            mostrarMensaje(
-                "mensajeContacto",
-                "¡Consulta enviada correctamente! Nos comunicaremos contigo.",
-                "success"
-            );
+            } catch (error) {
 
+                mostrarMensaje(
+                    "mensajeContacto",
+                    error.message || "No se pudo enviar la consulta. Intenta de nuevo.",
+                    "error"
+                );
 
-            formulario.reset();
+            }
 
         }
     );
@@ -787,7 +797,7 @@ document.addEventListener(
     "DOMContentLoaded",
     function() {
 
-        mostrarCatalogo();
+        cargarCatalogo();
 
         mostrarDetalle();
 
