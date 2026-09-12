@@ -28,4 +28,14 @@ async function crearVehiculo(req, res) {
   }
 }
 
-module.exports = { listarVehiculos, obtenerVehiculo, crearVehiculo };
+async function eliminarVehiculo(req, res) {
+  try {
+    const vehiculo = await Vehiculo.findByIdAndDelete(req.params.id);
+    if (!vehiculo) return res.status(404).json({ error: "Vehículo no encontrado" });
+    res.json({ ok: true, mensaje: "Vehículo eliminado correctamente" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+module.exports = { listarVehiculos, obtenerVehiculo, crearVehiculo, eliminarVehiculo };
