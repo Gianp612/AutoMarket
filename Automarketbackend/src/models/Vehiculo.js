@@ -8,6 +8,7 @@ const vehiculoSchema = new mongoose.Schema({
   caracteristicas: { type: String },
   descripcion: { type: String },
   icono: { type: String },
+  imagen: { type: String },
 });
 
 module.exports = mongoose.model("Vehiculo", vehiculoSchema);
